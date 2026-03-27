@@ -28,7 +28,7 @@ A lightweight, **event-driven order-processing agent** built with TypeScript and
 ### Request Flow
 
 1. **API Layer** — Validates the input and passes it to the Orchestrator.
-2. **Planner (LLM)** — Parses the natural-language request into a **sequence of tool calls** (a linear DAG). Uses OpenAI's `gpt-4o-mini` with `response_format: json_object` for reliable output — or falls back to a **keyword-based mock** when no API key is configured.
+2. **Planner (LLM)** — Parses the natural-language request into a **sequence of tool calls** (a linear DAG). Uses the Gemini API (`gemini-2.5-flash`) with structured JSON formatting for reliable output — or falls back to a **keyword-based mock** when no API key is configured.
 3. **Orchestrator** — Iterates through the plan **sequentially**. If any step fails it:
    - **Retries** `cancel_order` once (handles the 20% random failure).
    - **Stops** execution and marks remaining steps as `skipped`.
@@ -53,9 +53,9 @@ All tool functions (`cancel_order`, `send_email`) are **async** with simulated d
 
 | Technique | Description |
 |-----------|-------------|
-| **JSON Mode** | OpenAI is called with `response_format: { type: "json_object" }` so the response is always valid JSON — no regex extraction needed |
+| **Structured Output** | Gemini is called with `responseSchema` so the response is always valid JSON — no regex extraction needed |
 | **Temperature 0** | Deterministic output reduces plan variance |
-| **Mock Fallback** | If no API key is provided, a keyword/regex-based planner produces identical plan structures. This lets reviewers test the full pipeline without an OpenAI account |
+| **Mock Fallback** | If no API key is provided, a keyword/regex-based planner produces identical plan structures. This lets reviewers test the full pipeline without an API account |
 | **Graceful Degradation** | If plan generation fails entirely, the orchestrator returns a clean error response instead of crashing |
 
 ### How are failures handled?
@@ -84,10 +84,10 @@ npm install
 cp .env.example .env
 ```
 
-To use real OpenAI planning, add your key to `.env`:
+To use real Gemini planning, add your key to `.env`:
 
 ```
-OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=AIza...
 ```
 
 > If you leave the key blank, the server runs in **Mock LLM mode** — fully functional, no API key needed.
@@ -212,7 +212,7 @@ server/
 ├── routes/
 │   └── index.ts             # API route handlers
 ├── services/
-│   ├── llm.ts               # OpenAI + mock LLM planner
+│   ├── llm.ts               # Gemini + mock LLM planner
 │   ├── tools.ts             # Mock tools (cancel_order, send_email)
 │   └── orchestrator.ts      # Sequential execution engine + state store
 └── utils/

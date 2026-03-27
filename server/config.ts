@@ -2,22 +2,22 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const hasOpenAIKey =
-  !!process.env.OPENAI_API_KEY &&
-  process.env.OPENAI_API_KEY !== "your_openai_api_key_here";
+const hasGeminiKey =
+  !!process.env.GEMINI_API_KEY &&
+  process.env.GEMINI_API_KEY !== "your_gemini_api_key_here";
 
 export const config = {
   PORT: parseInt(process.env.PORT || "3001", 10),
   NODE_ENV: process.env.NODE_ENV || "development",
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
-  OPENAI_MODEL: "gpt-4o-mini",
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+  GEMINI_MODEL: "gemini-2.5-flash",
   LOG_LEVEL: process.env.LOG_LEVEL || "info",
-  USE_MOCK_LLM: !hasOpenAIKey,
+  USE_MOCK_LLM: !hasGeminiKey,
 };
 
 if (config.USE_MOCK_LLM) {
   console.warn(
-    "[WARN] No OPENAI_API_KEY found — running in MOCK LLM mode. " +
-      "Set OPENAI_API_KEY in .env to use real OpenAI planning."
+    "[WARN] No GEMINI_API_KEY found — running in MOCK LLM mode. " +
+      "Set GEMINI_API_KEY in .env to use real Gemini planning."
   );
 }

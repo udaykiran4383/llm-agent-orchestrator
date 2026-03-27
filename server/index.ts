@@ -44,7 +44,7 @@ app.use(
 
 app.listen(config.PORT, () => {
   logger.info(`✦ Mini Agent Orchestrator running on http://localhost:${config.PORT}`);
-  logger.info(`  Mode: ${config.USE_MOCK_LLM ? "MOCK LLM" : `OpenAI (${config.OPENAI_MODEL})`}`);
+  logger.info(`  Mode: ${config.USE_MOCK_LLM ? "MOCK LLM" : `Gemini (${config.GEMINI_MODEL})`}`);
   logger.info(`  Endpoints:`);
   logger.info(`    GET  /api/health          — Health check`);
   logger.info(`    POST /api/orchestrate     — Execute an agent plan`);

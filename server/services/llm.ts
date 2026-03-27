@@ -1,12 +1,12 @@
-import OpenAI from "openai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { config } from "../config";
 import { logger } from "../utils/logger";
 import { Plan } from "../types";
 
-// OpenAI client — only initialized if we have a real key
-let client: OpenAI | null = null;
+// Gemini client — only initialized if we have a real key
+let genAI: GoogleGenerativeAI | null = null;
 if (!config.USE_MOCK_LLM) {
-  client = new OpenAI({ apiKey: config.OPENAI_API_KEY });
+  genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
 }
 
 const SYSTEM_PROMPT = `You are an intelligent agent orchestrator. Analyze user requests and generate a plan using available tools.
@@ -32,23 +32,24 @@ Rules:
 - Consider dependencies: cancel_order should come before send_email when the email depends on the cancellation result.
 - Always include a rationale.`;
 
-// Real LLM plan generation via OpenAI
+// Real LLM plan generation via Gemini
 async function generateRealPlan(userRequest: string): Promise<Plan> {
-  if (!client) throw new Error("OpenAI client not initialized");
+  if (!genAI) throw new Error("Gemini client not initialized");
 
-  const response = await client.chat.completions.create({
-    model: config.OPENAI_MODEL,
-    max_tokens: 1024,
-    temperature: 0,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userRequest },
-    ],
+  const model = genAI.getGenerativeModel({
+    model: config.GEMINI_MODEL,
+    systemInstruction: SYSTEM_PROMPT,
+    generationConfig: {
+      temperature: 0,
+      responseMimeType: "application/json"
+    }
   });
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error("No response content from OpenAI");
+  const result = await model.generateContent(userRequest);
+  const content = result.response.text();
+
+  if (!content) throw new Error("No response content from Gemini");
+  console.log("GEMINI RAW:", content);
 
   const plan = JSON.parse(content) as Plan;
   if (!plan.steps || !Array.isArray(plan.steps)) {
@@ -106,7 +107,7 @@ function generateMockPlan(userRequest: string): Plan {
 
 // Public API — automatically selects real or mock mode based on config
 export async function generatePlan(userRequest: string): Promise<Plan> {
-  const mode = config.USE_MOCK_LLM ? "mock" : "OpenAI";
+  const mode = config.USE_MOCK_LLM ? "mock" : "Gemini";
   logger.info(`Generating plan (${mode} mode)...`);
 
   try {
